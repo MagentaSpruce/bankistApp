@@ -79,33 +79,30 @@ const displayMovements = function (movements) {
     // console.log(html);
   });
 };
-displayMovements(movements);
 
 const calcDisplayBalance = movements => {
   const balance = movements.reduce((acc, mov) => acc + mov, 0);
   labelBalance.textContent = `${balance}€`;
 };
-calcDisplayBalance(movements);
 
-const calcDisplaySummary = function (movements) {
-  const incomes = movements
+const calcDisplaySummary = function (acc) {
+  const incomes = acc.movements
     .filter(mov => mov > 0)
     .reduce((acc, mov) => acc + mov, 0);
   labelSumIn.textContent = `${incomes.toFixed(2)}€`;
 
-  const losses = movements
+  const losses = acc.movements
     .filter(mov => mov < 0)
     .reduce((acc, mov) => acc + mov, 0);
   labelSumOut.textContent = `${Math.abs(losses).toFixed(2)}€`;
 
-  const interest = movements
+  const interest = acc.movements
     .filter(mov => mov > 0)
-    .map(mov => mov * 0.011)
+    .map(mov => (mov * acc.interestRate) / 100)
     .filter(mov => mov >= 1)
     .reduce((acc, mov) => acc + mov, 0);
   labelSumInterest.textContent = `${interest.toFixed(2)}€`;
 };
-calcDisplaySummary(account1.movements);
 
 const createUsernames = accs => {
   accs.forEach(acc => {
@@ -119,7 +116,35 @@ const createUsernames = accs => {
 createUsernames(accounts);
 // console.log(accounts);
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+let currentAccount;
+
+//Event handlers
+btnLogin.addEventListener('click', e => {
+  e.preventDefault();
+
+  currentAccount = accounts.find(
+    acc => acc.username === inputLoginUsername.value
+  );
+  console.log(currentAccount);
+
+  if (currentAccount?.pin === Number(inputLoginPin.value)) console.log('login');
+  //Display UI and Welcome
+  labelWelcome.textContent = `Welcome back ${
+    currentAccount.owner.split(' ')[0]
+  }`;
+  containerApp.style.opacity = 100;
+  //Clear input fields
+  inputLoginUsername.value = inputLoginPin.value = '';
+  inputLoginPin.blur();
+  //Display balance
+  calcDisplayBalance(currentAccount.movements);
+  //Display summary
+  calcDisplaySummary(currentAccount);
+  //Display movements
+  displayMovements(currentAccount.movements);
+});
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 const movementsDescriptions = movements.map((mov, i, arr) => {
   return `Movement ${i + 1}: You ${
