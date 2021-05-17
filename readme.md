@@ -5,15 +5,22 @@ This project was built following the instructions of Jonas Schedtmann, a Udemy J
 There is a flowchart provided with this project which provides an abstract look at the overall build and functionality. --> Bankist-flowchart.png
 
 There are four accounts that can be logged-in/out with different pins and usernames given here:
-account 1 user name = js      account 1 pin: 1111
-account 2 user name = jd      account 2 pin: 2222
-account 3 user name = sw      account 3 pin: 3333
-account 4 user name = ss      account 4 pin: 4444
+1) account 1 user name = js      *account 1 pin: 1111
+2) account 2 user name = jd      *account 2 pin: 2222
+3) account 3 user name = sw      *account 3 pin: 3333
+4) account 4 user name = ss      *account 4 pin: 4444
 
 Constructing this project helped me to better learn and practice the following:
 1. insertAdjacentHTML() method and properties (beforebegin, afterbegin, beforeend, afterend).
 2. Multiple Array.methods() 
 3. .blur() method
+4. DOM manipulation
+5. ! operator
+6. _ for omitting parameters
+7. Working with Dates and Numbers
+8. Internationalizing
+9. setTimeout()
+10. Creating a Countdown Timer
 
 A general walkthrough of the JavaScript code is given below.
 
@@ -27,7 +34,7 @@ const displayMovements = function (movements) {
     const html = `
   <div class="movements__row">
     <div class="movements__type movements__type--${type}">${i + 1} ${type}</div>
-    <div class="movements__value">${mov}€</div>
+    <div class="movements__value">${mov.toFixed(2}€</div>
   </div>`;
     containerMovements.insertAdjacentHTML('afterbegin', html);
   });
@@ -210,3 +217,141 @@ btnLoan.addEventListener('click', e => {
 });
 ```
 
+
+To implement the sorting functionality the displayMovements() function is edited to add and set the default sort setting to false. Upon the sort button click that default setting will be changed to true which will trigger the movements to be sorted. This is done by the way of a ternary operator. If sort button has been clicked this changes the default setting to true, then the movements array will have a copy made using .slice() and that copy of the movements array will then be sorted with .sort() before being displayed to the UI.
+To allow the sorted button to revamp to the unsorted list the ! operator is used. If sorted is default false, that means when the button is clicked the desired outcome is for it to be set to true, or, the opposite of sorted. !sorted is the opposite of sorted. sorted = !sorted flips the variable back and forth. 
+```JavaScript
+const displayMovements = function (movements, sort = false) {
+  containerMovements.innerHTML = '';
+
+  const movs = sort ? movements.slice().sort((a, b) => a - b) : movements;
+
+  movs.forEach((mov, i) => {
+    const type = mov > 0 ? 'deposit' : 'withdrawal';
+    // console.log(movements);
+
+    const html = `
+    <div class="movements__row">
+      <div class="movements__type movements__type--${type}">${
+      i + 1
+    } ${type}</div>
+      <div class="movements__value">${mov}€</div>
+    </div>`;
+    containerMovements.insertAdjacentHTML('afterbegin', html);
+    // console.log(html);
+  });
+};
+
+let sorted = false;
+btnSort.addEventListener('click', e => {
+  e.preventDefault();
+  displayMovements(currentAccount.movements, !sorted);
+  sorted = !sorted;
+});
+```
+
+
+Dates are now added. const locale dynamically determines the users language/location settings to be set by pulling the relevant data direct from the browser. Options specify formatting.
+```JavaScript
+  const now = new Date();
+  const options = {
+    hour: 'numeric',
+    minute: 'numeric',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  };
+  const locale = navigator.language;
+
+  labelDate.textContent = new Intl.DateTimeFormat(locale, options).format(now);
+```
+
+
+The movement date and times are added by editing the displayMovements() function.
+```JavaScript
+const displayMovements = function (acc, sort = false) {
+  containerMovements.innerHTML = '';
+
+  const movs = sort
+    ? acc.movements.slice().sort((a, b) => a - b)
+    : acc.movements;
+
+  movs.forEach((mov, i) => {
+    const type = mov > 0 ? 'deposit' : 'withdrawal';
+    // console.log(movements);
+
+    const date = new Date(acc.movementsDates[i]);
+    const day = `${date.getDate()}`.padStart(2, 0);
+    const month = `${date.getMonth() + 1}`.padStart(2, 0);
+    const year = date.getFullYear();
+    const displayDate = `${day}/${month}/${year}`;
+
+    const html = `
+    <div class="movements__row">
+      <div class="movements__type movements__type--${type}">${
+      i + 1
+    } ${type}</div>
+      <div class="movements__date">${displayDate}</div>
+      <div class="movements__value">${mov.toFixed(2)}€</div>
+    </div>`;
+    containerMovements.insertAdjacentHTML('afterbegin', html);
+    // console.log(html);
+  });
+};
+```
+
+
+Internationalizing the currency type of user movements was done by constructing the formatCur() function which is reusable across applications by way of its generalized parameters and in-line set options.
+```JavaScript
+const formatCur = function (value, locale, currency) {
+    return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: currency,
+      }).format(value);
+};
+```
+
+
+To simulate the wait time for receiving a loan, a count-down timer is added by way of the setTimeout function wrapped around the loan button functions and set to a time of 2.5 seconds.
+```JavaScript
+    setTimeout(function () {
+      currentAccount.movements.push(amount);
+
+      //Add loan date
+      currentAccount.movementsDates.push(new Date().toISOString());
+
+      //update UI
+      updateUI(currentAccount);
+    }, 2500);
+  }
+```
+
+
+To create the logged in countdown timer the startLogOutTimer() function was created.
+```JavaScript
+const startLogOutTimer = function () {
+  const tick = int => {
+    const min = String(Math.trunc(time / 60)).padStart(2, 0);
+    const sec = String(time % 60).padStart(2, 0);
+    //print remaining time to UI on each callback
+    labelTimer.textContent = `${min}:${sec}`;
+    //at 0 stop time and hide the UI
+    if (time === 0) {
+      clearInterval(timer);
+      labelWelcome.textContent = 'Log in to get started';
+      containerApp.style.opacity = 0;
+    }
+    //decrease 1 sec
+    time--;
+  };
+  //set time to 5 min
+  let time = 300;
+  //call timer every sec
+  tick();
+  const timer = setInterval(tick, 1000);
+
+  return timer;
+};
+```
+
+***End Walkthrough
