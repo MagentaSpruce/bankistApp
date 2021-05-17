@@ -224,14 +224,14 @@ const updateUI = function (acc) {
   displayMovements(acc);
 };
 
-let currentAccount;
-
 //FAKE ALWAYS LOGGED IN
-currentAccount = account1;
-updateUI(account1);
-containerApp.style.opacity = 100;
+// currentAccount = account1;
+// updateUI(account1);
+// containerApp.style.opacity = 100;
 
 //Event handlers
+let currentAccount, timer;
+
 btnLogin.addEventListener('click', e => {
   e.preventDefault();
 
@@ -273,6 +273,11 @@ btnLogin.addEventListener('click', e => {
   //Clear input fields
   inputLoginUsername.value = inputLoginPin.value = '';
   inputLoginPin.blur();
+
+  //Timer
+  if (timer) clearInterval(timer);
+
+  timer = startLogOutTimer();
   updateUI(currentAccount);
 });
 
@@ -302,6 +307,10 @@ btnTransfer.addEventListener('click', e => {
 
     //Update UI
     updateUI(currentAccount);
+
+    //Reset timer
+    clearInterval(timer);
+    timer = startLogOutTimer();
   }
 });
 
@@ -311,15 +320,19 @@ btnLoan.addEventListener('click', e => {
 
   if (amount > 0 && currentAccount.movements.some(mov => mov >= amount * 0.1)) {
     // Add movement
-    currentAccount.movements.push(amount);
+    setTimeout(function () {
+      currentAccount.movements.push(amount);
 
-    //Add loan date
-    currentAccount.movementsDates.push(new Date().toISOString());
+      //Add loan date
+      currentAccount.movementsDates.push(new Date().toISOString());
 
-    //update UI
-    updateUI(currentAccount);
+      //update UI
+      updateUI(currentAccount);
+    }, 2500);
   }
   inputLoanAmount.value = '';
+  clearInterval(timer);
+  timer = startLogOutTimer();
 });
 
 btnClose.addEventListener('click', e => {
@@ -345,6 +358,31 @@ btnSort.addEventListener('click', e => {
   displayMovements(currentAccount, !sorted);
   sorted = !sorted;
 });
+
+const startLogOutTimer = function () {
+  const tick = int => {
+    const min = String(Math.trunc(time / 60)).padStart(2, 0);
+    const sec = String(time % 60).padStart(2, 0);
+    //print remaining time to UI on each callback
+    labelTimer.textContent = `${min}:${sec}`;
+    //at 0 stop time and hide the UI
+    if (time === 0) {
+      clearInterval(timer);
+      labelWelcome.textContent = 'Log in to get started';
+      containerApp.style.opacity = 0;
+    }
+    //decrease 1 sec
+    time--;
+  };
+  //set time to 5 min
+  let time = 300;
+  //call timer every sec
+  tick();
+  const timer = setInterval(tick, 1000);
+
+  return timer;
+};
+
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // const movementsDescriptions = movements.map((mov, i, arr) => {
